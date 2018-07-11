@@ -17,7 +17,7 @@ collections "Transfer-Topic" as TOPIC_TRANSFERS
 entity "Position DAO" as POS_DAO
 collections "Notification-Topic" as TOPIC_NOTIFICATIONS
 ' entity "Participant DAO" as PARTICIPANT_DAO
-entity "Transfer DAO" as TRANS_DAO
+' entity "Transfer DAO" as TRANS_DAO
 database "Central Store" as DB
 
 box "Central Service" #LightYellow
@@ -26,7 +26,7 @@ box "Central Service" #LightYellow
     participant TOPIC_NOTIFICATIONS
     participant POS_DAO
     ' participant PARTICIPANT_DAO
-    participant TRANS_DAO
+    ' participant TRANS_DAO
     participant DB
 end box
 
@@ -47,9 +47,9 @@ group Abort Position Handler Consume
         deactivate POS_DAO
         POS_HANDLER <-> POS_HANDLER: Validate current state (transferStateChange.transferStateId == 'EXPIRED')\n<color #FF0000><b>Error code:</b> 2001</color>
 
-        group Persist Position change and Transfer State (with transferState='ABORTED' on position check pass)
+        group Persist Position change
             POS_HANDLER -> POS_DAO: Request to persist latest position and state to DB\n<color #FF0000><b>Error code:</b> 2003</color>
-            group <color #blue>DB TRANSACTION</color>
+            group <color #blue>DB TRANSACTION IMPLEMENTATION</color>
                 activate POS_DAO
                 POS_DAO -> DB: Select participantPosition.value FOR UPDATE from DB for Payee
                 activate DB
@@ -66,9 +66,8 @@ group Abort Position Handler Consume
                 end note
                 activate DB
                 deactivate DB
-                POS_DAO -> DB: Persist transfer state and participant position change
+                POS_DAO -> DB: Persist participant position change
                 hnote over DB #lightyellow
-                        INSERT **transferStateChange** transferStateId = 'ABORTED'
 
                         INSERT **participantPositionChange**
                         SET transferStateChangeId = transferStateChange.transferStateChangeId,
@@ -79,7 +78,6 @@ group Abort Position Handler Consume
                 end note
                 activate DB
                 deactivate DB
-                deactivate TRANS_DAO
             end
             POS_DAO --> POS_HANDLER: Return success
             deactivate POS_DAO
@@ -94,8 +92,8 @@ group Abort Position Handler Consume
                     headers: <transferHeaders>,
                     payload: {
                          "errorInformation": {
-                             "errorCode": 4001,
-                             "errorDescription": "Payer FSP insufficient liquidity",
+                             "errorCode": 3303,
+                             "errorDescription": "Client requested to use a transfer that has already expired.",
                              "extensionList": <transferMessage.extensionList>
                          }
                      }
@@ -133,37 +131,11 @@ group Abort Position Handler Consume
 
         group Persist Position change and Transfer State (with transferState='ABORTED' on position check pass)
             POS_HANDLER -> POS_DAO: Request to persist latest position and state to DB\n<color #FF0000><b>Error code:</b> 2003</color>
-            group <color #blue>DB TRANSACTION</color>
+            group <color #blue>REFER TO DB TRANSACTION IMPLEMENTATION ABOVE</color>
                 activate POS_DAO
-                POS_DAO -> DB: Select participantPosition.value FOR UPDATE from DB for Payee
-                activate DB
-                hnote over DB #lightyellow
-                    participantPosition
-                end note
-                DB --> POS_DAO: Return participantPosition.value from DB for Payee
-                deactivate DB
-                POS_DAO <-> POS_DAO: **latestPosition** = participantPosition.value - payload.amount.amount
-                POS_DAO->DB: Persist latestPosition to DB for Payee
-                hnote over DB #lightyellow
-                    UPDATE **participantPosition**
-                    SET value = latestPosition
-                end note
+                POS_DAO -> DB: Refer to implementation above
                 activate DB
                 deactivate DB
-                POS_DAO -> DB: Persist transfer state and participant position change
-                hnote over DB #lightyellow
-                        INSERT **transferStateChange** transferStateId = 'ABORTED'
-
-                        INSERT **participantPositionChange**
-                        SET transferStateChangeId = transferStateChange.transferStateChangeId,
-                        participantPositionId = participantPosition.participantPositionId,
-                        value = latestPosition,
-                        reservedValue = participantPosition.reservedValue
-                        createdDate = new Date()
-                end note
-                activate DB
-                deactivate DB
-                deactivate TRANS_DAO
             end
             POS_DAO --> POS_HANDLER: Return success
             deactivate POS_DAO
@@ -211,37 +183,11 @@ group Abort Position Handler Consume
 
         group Persist Position change and Transfer State (with transferState='ABORTED' on position check pass)
             POS_HANDLER -> POS_DAO: Request to persist latest position and state to DB\n<color #FF0000><b>Error code:</b> 2003</color>
-            group <color #blue>DB TRANSACTION</color>
+            group <color #blue>REFER TO DB TRANSACTION IMPLEMENTATION ABOVE</color>
                 activate POS_DAO
-                POS_DAO -> DB: Select participantPosition.value FOR UPDATE from DB for Payee
-                activate DB
-                hnote over DB #lightyellow
-                    participantPosition
-                end note
-                DB --> POS_DAO: Return participantPosition.value from DB for Payee
-                deactivate DB
-                POS_DAO <-> POS_DAO: **latestPosition** = participantPosition.value - payload.amount.amount
-                POS_DAO->DB: Persist latestPosition to DB for Payee
-                hnote over DB #lightyellow
-                    UPDATE **participantPosition**
-                    SET value = latestPosition
-                end note
+                POS_DAO -> DB: Refer to implementation above
                 activate DB
                 deactivate DB
-                POS_DAO -> DB: Persist transfer state and participant position change
-                hnote over DB #lightyellow
-                        INSERT **transferStateChange** transferStateId = 'ABORTED'
-
-                        INSERT **participantPositionChange**
-                        SET transferStateChangeId = transferStateChange.transferStateChangeId,
-                        participantPositionId = participantPosition.participantPositionId,
-                        value = latestPosition,
-                        reservedValue = participantPosition.reservedValue
-                        createdDate = new Date()
-                end note
-                activate DB
-                deactivate DB
-                deactivate TRANS_DAO
             end
             POS_DAO --> POS_HANDLER: Return success
             deactivate POS_DAO
