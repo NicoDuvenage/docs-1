@@ -45,36 +45,36 @@ group Fulfil Handler Consume (Success)
         group Validate Transfer Fulfilment Duplicate Check
             FULF_HANDLER -> FULF_HANDLER: Generate transferFulfilmentId
             activate TRANS_DAO
-            FULF_HANDLER -> TRANS_DAO: Request to retrieve Transfer Fulfilment message hash (if it exists)
+            FULF_HANDLER -> TRANS_DAO: Request to retrieve Transfer Fulfilment message hash (if it exists)\n<color #FF0000><b>Error code:</b> 2003</color>
             TRANS_DAO -> DB: Request Transfer fulfilment duplicate message hash
             hnote over DB #lightyellow
-                SELET transferId, hash FROM transferFulfilmentDuplicateCheck
+                SELET transferId, hash
+                FROM transferFulfilmentDuplicateCheck
                 WHERE transferId = payload.transfer.transferId
             end note
             activate DB
             TRANS_DAO <-- DB: Return hash if it exists
             deactivate DB
-            TRANS_DAO --> FULF_HANDLER: Return transfer fulfil message hash if it exists
+            TRANS_DAO --> FULF_HANDLER: Return list of transfer fulfil message hash if it exists
             deactivate TRANS_DAO
             alt Transfer Fulfil exists, hash matches
-                ' Need to check what repond with same results if finalised then resend, else ignore and wait for response
-                FULF_HANDLER -> TRANS_DAO: test
+                ' Need to check what respond with same results if finalised then resend, else ignore and wait for response
+                FULF_HANDLER -> TRANS_DAO: Request to retrieve Transfer Fulfilment and Transfer state\n<color #FF0000><b>Error code:</b> 2003</color>
                 activate TRANS_DAO
-                TRANS_DAO -> DB: Request Transfer state
+                TRANS_DAO -> DB: Request to retrieve Transfer Fulfilment and Transfer state
                 hnote over DB #lightyellow
                     transferFulfilment
                     transferStateChange
                 end note
                 activate DB
-                TRANS_DAO <-- DB: Return Transfer state
+                TRANS_DAO <-- DB: Return Transfer Fulfilment and Transfer state
                 deactivate DB
-                TRANS_DAO --> FULF_HANDLER: Return Transfer state
+                TRANS_DAO --> FULF_HANDLER: Return Transfer Fulfilment and Transfer state
                 deactivate TRANS_DAO
                 break
-                    FULF_HANDLER <-> FULF_HANDLER: <color #FF0000><b>Error handling:</b></color> If transferState is ['COMMITTED', 'ABORTED'] and transferFulfilment.isValid \nthen send notification to Payee and Payer with complete transfer\nelse ignore and allow normal processing to complete
+                    FULF_HANDLER <-> FULF_HANDLER: <color #FF0000><b>Error handling:</b></color> If transferState is ['COMMITTED', 'ABORTED'] and transferFulfilment.isValid \nthen send notification to Payee and Payer with complete transfer\nelse if not 'RESERVED' throw <color #FF0000><b>Error code:</b> 2001</color>\nelse ignore and allow normal processing to complete
                 end
             else Transfer exists, hash does not match
-                FULF_HANDLER -> TRANS_DAO: Request to retrieve Transfer Fulfilment and Transfer state
                 break If the transferFulfilment.isValid = false
                     FULF_HANDLER <-> FULF_HANDLER: <color #FF0000><b>Error code:</b> 3100</color>
                 end
