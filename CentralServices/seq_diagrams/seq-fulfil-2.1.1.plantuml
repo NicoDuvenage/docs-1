@@ -58,7 +58,7 @@ group Fulfil Handler Consume (Success)
             TRANS_DAO --> FULF_HANDLER: Return list of transfer fulfil message hash if it exists
             deactivate TRANS_DAO
             FULF_HANDLER -> TOPIC_EVENT: Publish event information
-            ref over FULF_HANDLER, FULF_HANDLER : Validate message.content.headers.FSIOP_SIGNATURE {seq-fulfil-2.1.4}\n<color #FF0000><b>Error codes:</b> 2001</color>
+            ref over FULF_HANDLER, FULF_HANDLER : Validate message.content.headers.FSPIOP_SIGNATURE {seq-fulfil-2.1.4}\n<color #FF0000><b>Error codes:</b> 2001</color>
             alt Transfer Fulfil exists, hash matches
                 ' Need to check what respond with same results if finalised then resend, else ignore and wait for response
                 FULF_HANDLER -> TRANS_DAO: Request to retrieve Transfer Fulfilment and Transfer state\n<color #FF0000><b>Error code:</b> 2003</color>
