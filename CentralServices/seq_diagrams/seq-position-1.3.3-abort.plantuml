@@ -51,15 +51,15 @@ group Abort Position Handler Consume
             POS_HANDLER -> POS_DAO: Request to persist latest position and state to DB\n<color #FF0000><b>Error code:</b> 2003</color>
             group <color #blue>DB TRANSACTION IMPLEMENTATION</color>
                 activate POS_DAO
-                POS_DAO -> DB: Select participantPosition.value FOR UPDATE from DB for Payee
+                POS_DAO -> DB: Select participantPosition.value FOR UPDATE from DB for Payer
                 activate DB
                 hnote over DB #lightyellow
                     participantPosition
                 end note
-                DB --> POS_DAO: Return participantPosition.value from DB for Payee
+                DB --> POS_DAO: Return participantPosition.value from DB for Payer
                 deactivate DB
                 POS_DAO <-> POS_DAO: **latestPosition** = participantPosition.value - payload.amount.amount
-                POS_DAO->DB: Persist latestPosition to DB for Payee
+                POS_DAO->DB: Persist latestPosition to DB for Payer
                 hnote over DB #lightyellow
                     UPDATE **participantPosition**
                     SET value = latestPosition
@@ -70,8 +70,8 @@ group Abort Position Handler Consume
                 hnote over DB #lightyellow
 
                         INSERT **participantPositionChange**
-                        SET transferStateChangeId = transferStateChange.transferStateChangeId,
-                        participantPositionId = participantPosition.participantPositionId,
+                        SET participantPositionId = participantPosition.participantPositionId,
+                        transferStateChangeId = transferStateChange.transferStateChangeId,
                         value = latestPosition,
                         reservedValue = participantPosition.reservedValue
                         createdDate = new Date()
@@ -200,7 +200,13 @@ group Abort Position Handler Consume
                 type: application/json
                 content: {
                     headers: <transferHeaders>,
-                    payload: <transferMessage>
+                    payload: {
+                         "errorInformation": {
+                             "errorCode": 3100,
+                             "errorDescription": "Transfer failed",
+                             "extensionList": <transferMessage.extensionList>
+                         }
+                     }
                 },
                 metadata: {
                     event: {
@@ -210,8 +216,9 @@ group Abort Position Handler Consume
                         action: abort,
                         createdAt: <timestamp>,
                         state: {
-                            status: "success",
-                            code: 0
+                            status: 'error',
+                            code: <errorInformation.errorCode>
+                            description: <errorInformation.errorDescription>
                         }
                     }
                 }
