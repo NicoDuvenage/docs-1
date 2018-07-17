@@ -33,7 +33,7 @@ end box
 ' start flow
 activate POS_HANDLER
 group Abort Position Handler Consume
-    opt type == 'position' && action == 'timeout-received' || type == 'position' && action == 'timeout-reserved'
+    opt type == 'position' && action == 'timeout-reserved'
         POS_HANDLER -> POS_DAO: Request current state of transfer from DB\n<color #FF0000><b>Error code:</b> 2003</color>
         activate POS_DAO
         POS_DAO -> DB: Retrieve current state of transfer from DB
@@ -167,7 +167,7 @@ group Abort Position Handler Consume
         end note
     end
     ' We do not see how this scenario will be triggered
-    opt type == 'position' && action == 'failed' (Unable to currently trigger this scenario)
+    opt type == 'position' && action == 'fail' (Unable to currently trigger this scenario)
         POS_HANDLER -> POS_DAO: Request current state of transfer from DB\n<color #FF0000><b>Error code:</b> 2003</color>
         activate POS_DAO
         POS_DAO -> DB: Retrieve current state of transfer from DB
