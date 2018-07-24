@@ -12,9 +12,9 @@ autonumber
 '   database - Database Persistance Store
 
 ' declare actors
-collections "topic-dfsp1-position-prepare" as TOPIC_POSITION_PREPARE_DFSP1
-collections "topic-dfsp2-position-fulfil" as TOPIC_POSITION_FULFIL_DFSP2
-collections "topic-dfsp1-position-abort" as TOPIC_POSITION_ABORT_DFSP1
+collections "topic-usd-dfsp1-position-prepare" as TOPIC_POSITION_PREPARE_DFSP1
+collections "topic-usd-dfsp2-position-fulfil" as TOPIC_POSITION_FULFIL_DFSP2
+collections "topic-usd-dfsp1-position-abort" as TOPIC_POSITION_ABORT_DFSP1
 control "Position Handler" as POS_HANDLER
 collections "Transfer-Topic" as TOPIC_TRANSFERS
 ' entity "Position DAO" as POS_DAO

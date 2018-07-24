@@ -119,6 +119,7 @@ group Fulfil Handler Consume (Success)
             FULF_HANDLER <-- TRANS_DAO: Return transfer
             deactivate TRANS_DAO
             FULF_HANDLER ->FULF_HANDLER: Validate that Transfer.ilpCondition = SHA-256 (content.payload.fulfilment)\n<color #FF0000><b>Error code:</b> 2001</color>
+            FULF_HANDLER -> FULF_HANDLER: Validate expirationDate\n<color #FF0000><b>Error code:</b> 3303</color>
 
             opt Transfer.ilpCondition validate successful
                 group Request current Settlement Window

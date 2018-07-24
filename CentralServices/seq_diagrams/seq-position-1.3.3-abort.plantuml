@@ -66,8 +66,9 @@ group Abort Position Handler Consume
                 end note
                 activate DB
                 deactivate DB
-                POS_DAO -> DB: Persist participant position change
+                POS_DAO -> DB: Persist participant position change and state change
                 hnote over DB #lightyellow
+                        INSERT **transferStateChange** transferStateId = 'ABORTED'
 
                         INSERT **participantPositionChange**
                         SET participantPositionId = participantPosition.participantPositionId,
