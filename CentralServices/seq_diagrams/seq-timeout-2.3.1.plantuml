@@ -13,18 +13,20 @@ autonumber
 
 ' declare actors
 control "Transfer Timeout Handler" as EXP_HANDLER
-collections "Position-Topic-dfsp1" as TOPIC_POSITION_DFSP1
+collections "Topic-{currency}-DFSPn-Position-Abort" as TOPIC_POSITION_DFSP
 collections "Notification-Topic" as TOPIC_NOTIFICATIONS
 collections "Event-Topic" as TOPIC_EVENT
 entity "Transfer DAO" as TRANS_DAO
+entity "Position DAO" as POS_DAO
 database "Central Store" as DB
 
 box "Central Service" #LightYellow
     participant EXP_HANDLER
-    participant TOPIC_POSITION_DFSP1
+    participant TOPIC_POSITION_DFSP
     participant TOPIC_NOTIFICATIONS
     participant TOPIC_EVENT
     participant TRANS_DAO
+    participant POS_DAO
     participant DB
 end box
 
@@ -37,7 +39,7 @@ group Timeout Handler Consume
     end
 
     group Request expired transfers
-        EXP_HANDLER -> TRANS_DAO: Request all expired transfers (Date.now() > expirationDate) \nwith transferState IN ['RECEIVED', 'RESERVED']
+        EXP_HANDLER -> TRANS_DAO: Request all expired transfers (Date.now() > expirationDate) \nwith transferState IN ['RECEIVED_PREPARE', 'RESERVED']\n<color #FF0000><b>Error codes:</b> 2003, 3208</color>
         activate TRANS_DAO
         TRANS_DAO -> DB: Fetch from database
         activate DB
@@ -53,7 +55,18 @@ group Timeout Handler Consume
 
     loop for each transfer in the list
         |||
-        alt transferState == 'RECEIVED_PENDING'
+        alt transferState == 'RECEIVED_PREPARE'
+            group
+                EXP_HANDLER -> POS_DAO: Request to persist latest state to DB\n<color #FF0000><b>Error code:</b> 2003</color>
+                POS_DAO -> DB: Persist state change
+                hnote over DB #lightyellow
+                        INSERT **transferStateChange**
+                        SET transferStateId = 'ABORTED'
+                end note
+                activate DB
+                deactivate DB
+                POS_DAO --> EXP_HANDLER: Return success
+            end
             note right of EXP_HANDLER #yellow
                 Message:
                 {
@@ -115,10 +128,11 @@ group Timeout Handler Consume
                     }
                 }
             end note
+            EXP_HANDLER -> TOPIC_POSITION_DFSP: Route & Publish Position event
+            activate TOPIC_POSITION_DFSP
+            deactivate TOPIC_POSITION_DFSP
         end
-        EXP_HANDLER -> TOPIC_POSITION_DFSP1: Route & Publish Position event
-        activate TOPIC_POSITION_DFSP1
-        deactivate TOPIC_POSITION_DFSP1
+
     end
 end
 @enduml
